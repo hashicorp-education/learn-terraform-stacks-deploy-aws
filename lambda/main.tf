@@ -6,13 +6,9 @@ data "archive_file" "lambda_hello_world" {
 
   source_dir = "${path.module}/hello-world"
 
-  # HACK: We're manually utilizing the agent's tmp dir; a proper temporary file interface should be
-  # used here instead.
   output_path = "${path.module}/../../../tmp/hello-world.zip"
 }
 
-# HACK: The tmp dir in the agent is not yet persisted between plan/apply. This hack allows us to
-# cheat by using the plan itself as a cache between operations.
 data "local_file" "lambda_hello_world" {
   filename = data.archive_file.lambda_hello_world.output_path
 }
@@ -40,8 +36,8 @@ resource "aws_lambda_function" "hello_world" {
   s3_bucket = var.bucket_id
   s3_key    = aws_s3_object.lambda_hello_world.key
 
-  runtime = "ruby3.2"
-  handler = "hello.LambdaFunctions::Handler.process"
+  runtime = "nodejs18.x"
+  handler = "index.handler"
 
   source_code_hash = data.archive_file.lambda_hello_world.output_base64sha256
 
@@ -75,5 +71,3 @@ resource "aws_iam_role_policy_attachment" "lambda_policy" {
   role       = aws_iam_role.lambda_exec.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
-
-
